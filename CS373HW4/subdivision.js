@@ -39,6 +39,100 @@ function subdivide() {
 	 * output to newVerts and newFaces arrays.
 	 */
 // ===YOUR CODE STARTS HERE===
+	let numVert = currVerts.length;
+	let vertAdj = {};
+	let vertNeigh = {};
+	for (let i = 0; i < currFaces.length; ++i) {
+
+		let trFace = currFaces[i];
+		let pairs = [trFace.a, trFace.b, trFace.c];
+		
+		for (let i = 0; i < 3; ++i) {
+			let key = 0;
+			let a = pairs[i%3]; 
+			let b = pairs[(i+1)%3];
+			let c = pairs[(i+2)%3];
+
+			if (a in vertNeigh) {
+				vertNeigh[a].add(b);
+				vertNeigh[a].add(c);
+			} else {
+				vertNeigh[a] = new Set([b, c]);
+			}
+
+			if (a > b) {
+				a = pairs[(i+1)%3];
+				b = pairs[i%3];
+			}
+			key = a * numVert + b;
+
+			if (key in vertAdj) {
+				vertAdj[key].n2 = c;
+			} else {
+				vertAdj[key] = {v1: a, v2: b, n1: c, n2: 0, index: 0};
+			}
+
+		}
+	}
+
+	for (let i = 0; i < currVerts.length; ++i) { 
+
+		let k = vertNeigh[i].size;
+		let w = (1/k)*((5/8) - Math.pow(((3/8) + (Math.cos(2*Math.PI/k))/4), 2));
+		let v = currVerts[i];
+
+		let wSumX = (1-(k*w))*v.x;
+		let wSumY = (1-(k*w))*v.y;
+		let wSumZ = (1-(k*w))*v.z;
+
+		let vertSet = vertNeigh[i].values();
+		for (let j = 0; j < k; ++j) {
+			let nv = currVerts[vertSet.next().value];
+			wSumX += (w * nv.x);
+			wSumY += (w * nv.y);
+			wSumZ += (w * nv.z);
+		}
+		newVerts.push(new THREE.Vector3(wSumX, wSumY, wSumZ));
+	}
+
+	let indexCounter = numVert;
+	Object.keys(vertAdj).forEach(function(i) {
+		let p1 = currVerts[vertAdj[i].v1];
+		let p2 = currVerts[vertAdj[i].v2];
+		let p3 = currVerts[vertAdj[i].n1];
+		let p4 = currVerts[vertAdj[i].n2];
+
+		let wSumX = (3/8)*p1.x + (3/8)*p2.x + (1/8)*p3.x + (1/8)*p4.x;
+		let wSumY = (3/8)*p1.y + (3/8)*p2.y + (1/8)*p3.y + (1/8)*p4.y;
+		let wSumZ = (3/8)*p1.z + (3/8)*p2.z + (1/8)*p3.z + (1/8)*p4.z;
+
+		newVerts.push(new THREE.Vector3(wSumX, wSumY, wSumZ));
+		vertAdj[i].index = indexCounter++;
+	});
+
+	for (let i = 0; i < currFaces.length; ++i) {
+
+		let trFace = currFaces[i];
+		let pairs = [trFace.a, trFace.b, trFace.c];
+		let midpoints = [];
+		
+		for (let i = 0; i < 3; ++i) {
+			let key = 0;
+			let a = pairs[i%3]; 
+			let b = pairs[(i+1)%3];
+
+			if (a > b) {
+				a = pairs[(i+1)%3];
+				b = pairs[i%3];
+			}
+			key = a * numVert + b;
+			midpoints.push(vertAdj[key].index);
+		}
+		newFaces.push(new THREE.Face3(pairs[0], midpoints[0], midpoints[2]));
+		newFaces.push(new THREE.Face3(pairs[1], midpoints[1], midpoints[0]));
+		newFaces.push(new THREE.Face3(pairs[2], midpoints[2], midpoints[1]));
+		newFaces.push(new THREE.Face3(midpoints[2], midpoints[0], midpoints[1]));
+	}
 
 // ---YOUR CODE ENDS HERE---
 	/* Overwrite current mesh with newVerts and newFaces */
