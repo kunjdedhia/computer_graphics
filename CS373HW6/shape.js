@@ -118,10 +118,15 @@ class Triangle {
 
 		this.P2P1 = this.P2.clone();
 		this.P2P1.sub(this.P1);
-
-		this.normDir = this.P2P0.clone();
-		this.normDir.cross(this.P2P1);
-		this.normDir.normalize();
+		
+		this.normSmooth = false;
+		if (this.n0 && this.n1 && this.n0) {
+			this.normSmooth = true;
+		} else {
+			this.normDir = this.P2P0.clone();
+			this.normDir.cross(this.P2P1);
+			this.normDir.normalize();
+		}
 // ---YOUR CODE ENDS HERE---
 	}
 
@@ -171,6 +176,20 @@ class Triangle {
 
 		if (t < tmin || t > tmax) return null;
 		if (alpha < 0 || beta < 0 || (alpha+beta) > 1 || t < 0) return null
+
+		if (this.normSmooth) {
+			let n0cof = this.n0.clone();
+			n0cof.multiplyScalar(alpha);
+			let n1cof = this.n1.clone();
+			n1cof.multiplyScalar(beta);
+			let n2cof = this.n2.clone();
+			n2cof.multiplyScalar(1-alpha-beta);
+
+			this.normDir = n0cof;
+			this.normDir.add(n1cof);
+			this.normDir.add(n2cof);
+			this.normDir.normalize();
+		}
 
 		let isect = new Intersection();
 		isect.t = t;

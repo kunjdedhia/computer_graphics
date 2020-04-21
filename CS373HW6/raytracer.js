@@ -63,22 +63,25 @@ function raytracing(ray, depth) {
 // ===YOUR CODE STARTS HERE===
 	let isect = rayIntersectScene(ray);
 	if (isect != null) {
-		if ((isect.material.kr != null || isect.material.kt != null) && (depth < 5)) {
+		if ((isect.material.kr != null || isect.material.kt != null) && (depth < maxDepth)) {
 			if (isect.material.kr) {
 				let negDir = ray.d.clone();
 				negDir.negate();
 				let reflectCol = isect.material.kr.clone();
-				reflectCol = reflectCol.multiply(raytracing(reflect(negDir, isect.normal), depth+1));
+				let reflect_ray = new Ray(isect.position, reflect(negDir, isect.normal));
+				reflectCol = reflectCol.multiply(raytracing(reflect_ray, depth+1));
 				color = color.add(reflectCol);
 			} 
 			if (isect.material.kt) {
 				let refractCol = isect.material.kt.clone();
-				refractCol = refractCol.multiply(raytracing(refract(ray.d, isect.normal, isect.material.ior), depth+1));
+				let refract_ray = new Ray(isect.position, refract(ray.d, isect.normal, isect.material.ior));
+				refractCol = refractCol.multiply(raytracing(refract_ray, depth+1));
 				color = color.add(refractCol);
 			} 
 		} else {
 			let ambColor = ambientLight.clone();
-			ambColor = ambColor.multiply(isect.material.ka);
+			let ambRef = isect.material.ka ? isect.material.ka : 0;
+			if (isect.material.ka) ambColor = ambColor.multiply(ambRef);
 			color = color.add(ambColor);
 
 			color = color.add(shading(ray, isect));
