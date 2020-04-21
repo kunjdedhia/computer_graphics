@@ -63,26 +63,26 @@ function raytracing(ray, depth) {
 // ===YOUR CODE STARTS HERE===
 	let isect = rayIntersectScene(ray);
 	if (isect != null) {
-		// if ((isect.material.kr != null || isect.material.kt != null) && (depth < 5)) {
-		// 	if (isect.material.kr) {
-		// 		let negDir = ray.d.clone();
-		// 		negDir.negate();
-		// 		let reflectCol = isect.material.kr.clone();
-		// 		reflectCol = reflectCol.multiply(raytracing(reflect(negDir, isect.normal), depth+1));
-		// 		color = color.add(reflectCol);
-		// 	} 
-		// 	if (isect.material.kt) {
-		// 		let refractCol = isect.material.kt.clone();
-		// 		refractCol = refractCol.multiply(raytracing(refract(ray.d, isect.normal, isect.material.ior), depth+1));
-		// 		color = color.add(refractCol);
-		// 	} 
-		// } else {
+		if ((isect.material.kr != null || isect.material.kt != null) && (depth < 5)) {
+			if (isect.material.kr) {
+				let negDir = ray.d.clone();
+				negDir.negate();
+				let reflectCol = isect.material.kr.clone();
+				reflectCol = reflectCol.multiply(raytracing(reflect(negDir, isect.normal), depth+1));
+				color = color.add(reflectCol);
+			} 
+			if (isect.material.kt) {
+				let refractCol = isect.material.kt.clone();
+				refractCol = refractCol.multiply(raytracing(refract(ray.d, isect.normal, isect.material.ior), depth+1));
+				color = color.add(refractCol);
+			} 
+		} else {
 			let ambColor = ambientLight.clone();
 			ambColor = ambColor.multiply(isect.material.ka);
 			color = color.add(ambColor);
 
 			color = color.add(shading(ray, isect));
-		// }
+		}
 		return color;
 	}
 	return backgroundColor;

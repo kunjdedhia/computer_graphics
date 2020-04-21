@@ -89,7 +89,8 @@ class Sphere {
 		isect.position = ray.pointAt(t);
 		let normal = ray.pointAt(t);
 		normal.sub(temp);
-		isect.normal = normal.normalize();
+		normal.normalize();
+		isect.normal = normal;
 		isect.material = this.material;
 		return isect;
 
@@ -122,7 +123,7 @@ class Triangle {
 		this.normDir.cross(this.P2P1);
 		this.normDir.normalize();
 // ---YOUR CODE ENDS HERE---
-	} 
+	}
 
 	intersect(ray, tmin, tmax) {
 // ===YOUR CODE STARTS HERE===
@@ -168,11 +169,13 @@ class Triangle {
 		let alpha = det(matA)/detEq;
 		let beta = det(matB)/detEq;
 
+		if (t < tmin || t > tmax) return null;
 		if (alpha < 0 || beta < 0 || (alpha+beta) > 1 || t < 0) return null
+
 		let isect = new Intersection();
 		isect.t = t;
 		isect.position = ray.pointAt(t);
-		isect.normal = this.normDir.clone();
+		isect.normal = this.normDir;
 		isect.material = this.material;
 		return isect;
 // ---YOUR CODE ENDS HERE---

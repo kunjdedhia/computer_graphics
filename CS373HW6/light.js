@@ -43,11 +43,46 @@ class SpotLight {
 		this.from = from.clone();
 		this.to = to.clone();
 		this.intensity = intensity.clone();
-		this.exponent = exponent;
+		this.exponent = exponent; 
 		this.cutoff = cutoff;
 	}
 	getLight(shadingPoint) {
 // ===YOUR CODE STARTS HERE===
+		// let ls = new LightSample();
+		// ls.position = this.from.clone();
+		// ls.direction = this.to.clone();
+		// ls.direction.sub(this.from);
+		// ls.direction.normalize();
+		// ls.intensity = this.intensity.clone();
+
+		// let shadDirection = shadingPoint.clone();
+		// shadDirection.sub(this.from);
+		// shadDirection.normalize();
+		// let shadDirectionCos = shadDirection.dot(ls.direction);
+		// // ls.intensity = ls.intensity.multiplyScalar(1/ls.direction.lengthSq());
+		// // ls.intensity = ls.intensity.multiplyScalar(Math.pow(shadDirectionCos, this.exponent));
+		// return ls;
+		let ls = new LightSample();
+		ls.position = this.from.clone();
+		ls.direction = this.from.clone();
+		ls.direction.sub(shadingPoint);
+		ls.intensity = this.intensity.clone();
+
+		let toFro = this.to.clone();
+		toFro.sub(this.from);
+		toFro.normalize();
+		let shadDirection = shadingPoint.clone();
+		shadDirection.sub(this.from);
+		shadDirection.normalize();
+		let shadDirectionCos = shadDirection.dot(toFro);
+		if (shadDirectionCos > Math.cos(this.cutoff*(Math.PI/180))) {
+			ls.intensity.multiplyScalar(Math.pow(shadDirectionCos, this.exponent));
+			ls.intensity.multiplyScalar(1/ls.direction.lengthSq());
+		} else {
+			ls.intensity.multiplyScalar(0);
+		}
+		ls.direction.normalize();
+		return ls;
 
 // ---YOUR CODE ENDS HERE---
 	}
