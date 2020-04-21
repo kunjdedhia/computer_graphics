@@ -77,11 +77,9 @@ class Sphere {
 		let t2 = (- b + Math.sqrt(delta))/2*a;
 
 		if (delta >= 0) {
-			if (t1 > 0) t = t1;
-			else if (t2 > 0) t = t2;
+			if ((t1 > 0) && (t1 >= tmin && t1 <= tmax)) t = t1;
+			else if ((t2 > 0) && (t2 >= tmin && t2 <= tmax)) t = t2;
 			else return null;
-			
-			if (t < tmin || t > tmax) return null;
 		}
 
 		let isect = new Intersection(); 
