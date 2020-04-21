@@ -61,16 +61,65 @@ function render() {
 function raytracing(ray, depth) {
 	let color = new THREE.Color(0,0,0);
 // ===YOUR CODE STARTS HERE===
+	let isect = rayIntersectScene(ray);
+	if (isect != null) {
+		// if ((isect.material.kr != null || isect.material.kt != null) && (depth < 5)) {
+		// 	if (isect.material.kr) {
+		// 		let negDir = ray.d.clone();
+		// 		negDir.negate();
+		// 		let reflectCol = isect.material.kr.clone();
+		// 		reflectCol = reflectCol.multiply(raytracing(reflect(negDir, isect.normal), depth+1));
+		// 		color = color.add(reflectCol);
+		// 	} 
+		// 	if (isect.material.kt) {
+		// 		let refractCol = isect.material.kt.clone();
+		// 		refractCol = refractCol.multiply(raytracing(refract(ray.d, isect.normal, isect.material.ior), depth+1));
+		// 		color = color.add(refractCol);
+		// 	} 
+		// } else {
+			let ambColor = ambientLight.clone();
+			ambColor = ambColor.multiply(isect.material.ka);
+			color = color.add(ambColor);
 
+			color = color.add(shading(ray, isect));
+		// }
+		return color;
+	}
+	return backgroundColor;
 // ---YOUR CODE ENDS HERE---
-	return color;
 }
 
 /* Compute and return shading color given a ray and the intersection point structure. */
 function shading(ray, isect) {
 	let color = new THREE.Color(0,0,0);
 // ===YOUR CODE STARTS HERE===
+	for (let i = 0; i < lights.length; i++) {
+		let ls = lights[i].getLight(isect.position);
+		let shadowRay = new Ray(isect.position, ls.direction);
+		let distToLightVector = ls.position.clone();
+		distToLightVector.sub(isect.position);
+		let distToLight = distToLightVector.length();
+		let shadow_isect = rayIntersectScene(shadowRay);
 
+		if (shadow_isect && shadow_isect.t < distToLight) 
+			continue;
+
+		if (isect.material.kd) {
+			let diffColor = ls.intensity.clone();
+			diffColor = diffColor.multiply(isect.material.kd);
+			diffColor = diffColor.multiplyScalar(Math.max(isect.normal.dot(ls.direction), 0));
+			color = color.add(diffColor);
+		}
+
+		if (isect.material.ks) {
+			let specColor = ls.intensity.clone();
+			specColor = specColor.multiply(isect.material.ks);
+			let negDir = ray.d.clone();
+			negDir.negate();
+			specColor = specColor.multiplyScalar(Math.pow(Math.max(reflect(ls.direction, isect.normal).dot(negDir), 0), isect.material.p));
+			color = color.add(specColor);
+		}
+	}
 // ---YOUR CODE ENDS HERE---
 	return color;
 }

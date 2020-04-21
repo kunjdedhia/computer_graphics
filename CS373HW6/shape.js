@@ -61,9 +61,39 @@ class Sphere {
 	}
 	intersect(ray, tmin, tmax) {
 // ===YOUR CODE STARTS HERE===
+		let temp = this.C.clone();
+		let a = ray.d.lengthSq();
+		let b = ray.o.clone();
+		b.sub(temp);
+		b = 2 * (b.dot(ray.d));
+
+		let c = ray.o.distanceToSquared(temp) - this.r2;
+
+		let delta = (b*b) - 4*a*c;
+		if (delta < 0) return null;
+
+		let t = null;
+		let t1 = (- b - Math.sqrt(delta))/2*a;
+		let t2 = (- b + Math.sqrt(delta))/2*a;
+
+		if (delta >= 0) {
+			if (t1 > 0) t = t1;
+			else if (t2 > 0) t = t2;
+			else return null;
+			
+			if (t < tmin || t > tmax) return null;
+		}
+
+		let isect = new Intersection(); 
+		isect.t = t;
+		isect.position = ray.pointAt(t);
+		let normal = ray.pointAt(t);
+		normal.sub(temp);
+		isect.normal = normal.normalize();
+		isect.material = this.material;
+		return isect;
 
 // ---YOUR CODE ENDS HERE---
-		return null;
 	}
 }
 
@@ -82,15 +112,70 @@ class Triangle {
 		// below you may pre-compute any variables that are needed for intersect function
 		// such as the triangle normal etc.
 // ===YOUR CODE STARTS HERE===
+		this.P2P0 = this.P2.clone();
+		this.P2P0.sub(this.P0);
 
+		this.P2P1 = this.P2.clone();
+		this.P2P1.sub(this.P1);
+
+		this.normDir = this.P2P0.clone();
+		this.normDir.cross(this.P2P1);
+		this.normDir.normalize();
 // ---YOUR CODE ENDS HERE---
 	} 
 
 	intersect(ray, tmin, tmax) {
 // ===YOUR CODE STARTS HERE===
+		function det(arr) {
+			let det = arr[0][0] * (arr[1][1]*arr[2][2] - arr[1][2]*arr[2][1]) -
+			arr[0][1] * (arr[1][0]*arr[2][2] - arr[1][2]*arr[2][0]) +
+			arr[0][2] * (arr[1][0]*arr[2][1] - arr[1][1]*arr[2][0]);
 
+			return det;
+		}
+
+		let matrixEq = [
+			[ray.d.x, this.P2P0.x, this.P2P1.x],
+			[ray.d.y, this.P2P0.y, this.P2P1.y],
+			[ray.d.z, this.P2P0.z, this.P2P1.z]
+		];
+
+		let detEq = det(matrixEq);
+		if (detEq == 0) return null;
+
+		let P2O = this.P2.clone();
+		P2O.sub(ray.o);
+
+		let matT = [
+			[P2O.x, this.P2P0.x, this.P2P1.x],
+			[P2O.y, this.P2P0.y, this.P2P1.y],
+			[P2O.z, this.P2P0.z, this.P2P1.z]
+		];
+
+		let matA = [
+			[ray.d.x, P2O.x, this.P2P1.x],
+			[ray.d.y, P2O.y, this.P2P1.y],
+			[ray.d.z, P2O.z, this.P2P1.z]
+		];
+
+		let matB = [
+			[ray.d.x, this.P2P0.x, P2O.x],
+			[ray.d.y, this.P2P0.y, P2O.y],
+			[ray.d.z, this.P2P0.z, P2O.z]
+		];
+
+		let t = det(matT)/detEq;
+		let alpha = det(matA)/detEq;
+		let beta = det(matB)/detEq;
+
+		if (alpha < 0 || beta < 0 || (alpha+beta) > 1 || t < 0) return null
+		let isect = new Intersection();
+		isect.t = t;
+		isect.position = ray.pointAt(t);
+		isect.normal = this.normDir.clone();
+		isect.material = this.material;
+		return isect;
 // ---YOUR CODE ENDS HERE---
-		return null;
 	}
 }
 
