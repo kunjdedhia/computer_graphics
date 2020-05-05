@@ -40,9 +40,18 @@ function render() {
 				// compute normalized pixel coordinate (x,y)
 				let x = i/imageWidth;
 				let y = (imageHeight-1-j)/imageHeight;
-				let ray = camera.getCameraRay(x,y);
-				let color = raytracing(ray, 0);
-				setPixelColor(pixels, idx, color);
+
+				// anti-aliasing
+				let colorAlias = new THREE.Color(0, 0, 0);
+				for (let m = 0; m < 4; m++) {
+					let u = x + m*1/(imageWidth*4);
+					for (let n = 0; n < 4; n++) {
+						let v = y + n/4*(1 - ((imageHeight-1)/imageHeight));
+						let ray = camera.getCameraRay(u,v);
+						colorAlias = colorAlias.add(raytracing(ray, 0));
+					}
+				}
+				setPixelColor(pixels, idx, colorAlias.multiplyScalar(1/16));
 			}
 		}
 		row+=chunksize;  // non-blocking j loop
@@ -54,6 +63,31 @@ function render() {
 			console.log('Done.')
 		}
 	})();
+}
+
+function getEnvIntensity(dirVec) {
+
+	function rgbeToFloat(idx) {
+		if (probePix[idx+3] > 0) {
+			let f = Math.pow(2, probePix[idx+3]-(128+8));
+			return new THREE.Color(probePix[idx+0]*f, probePix[idx+1]*f, probePix[idx+2]*f);
+		}
+		return new THREE.Color(0, 0, 0);
+	}
+
+	dirVec = dirVec.clone();
+	dirVec.normalize();
+	let x = dirVec.x;
+	let y = dirVec.y;
+	let z = dirVec.z;
+
+	let r = (1/Math.PI)*Math.acos(z)/Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+	let u = ((x*r)+1)*probeWidth/2;
+	let v = ((y*r)+1)*probeHeight/2;;
+
+	let idx = 4*(Math.round(v)*probeWidth + Math.round(u));
+
+	return rgbeToFloat(idx);
 }
 
 /* Trace ray in the scene and return color of ray. 'depth' is the current recursion depth.
@@ -87,8 +121,12 @@ function raytracing(ray, depth) {
 			color = color.add(shading(ray, isect));
 		}
 		return color;
+	} else {
+		if (typeof probeDir !== 'undefined') {
+			return getEnvIntensity(ray.d);
+		}
+		return backgroundColor;
 	}
-	return backgroundColor;
 // ---YOUR CODE ENDS HERE---
 }
 
@@ -124,9 +162,9 @@ function shading(ray, isect) {
 		}
 	}
 	// ambient occlusion
-	let sucSample = 0
+	let sucSampleAO = 0
 	let ambOcc = 0;
-	while (sucSample < 300) {
+	while (sucSampleAO < 300) {
 		let theta = Math.acos(1 - (2*Math.random()));
 		let phi = 2*Math.PI*Math.random();
 
@@ -142,11 +180,39 @@ function shading(ray, isect) {
 			if (ambIsect == null) {
 				ambOcc += angDirNorm;
 			}
-			sucSample += 1;
+			sucSampleAO += 1;
 		}
 	}
-	ambOcc = ambOcc/sucSample;
+	ambOcc = ambOcc/sucSampleAO;
 	color = color.multiplyScalar(ambOcc*2);
+
+	// image based lighting
+	if (typeof probeDir !== 'undefined') {
+		let sucSampleIBL = 0
+		let ibl = new THREE.Color(0, 0, 0);
+		while (sucSampleIBL < 100) {
+			let theta = Math.acos(1 - (2*Math.random()));
+			let phi = 2*Math.PI*Math.random();
+	
+			let x = Math.sin(theta)*Math.cos(phi);
+			let y = Math.cos(theta);
+			let z = Math.sin(theta)*Math.sin(phi);
+			
+			let dirVec = new THREE.Vector3(x, y, z);
+			dirVec.normalize();
+			let angDirNorm = dirVec.dot(isect.normal);
+			if (angDirNorm > 0) {
+				let ambIsect = rayIntersectScene(new Ray(isect.position, dirVec));
+				if (ambIsect == null) {
+					let envColor = getEnvIntensity(dirVec);
+					ibl = ibl.add(envColor.multiplyScalar(angDirNorm));
+				}
+				sucSampleIBL += 1;
+			}
+		}
+		ibl = ibl.multiplyScalar(1/sucSampleIBL);
+		color = color.add(ibl);
+	}
 // ---YOUR CODE ENDS HERE---
 	return color;
 }

@@ -30,6 +30,7 @@ let mosaics = []; // array to store mosaic image datasets
 // Adjust brightness. Provided to you as a starting example.
 function brighten(input, output, brightness) {
 	let ip = input.pixels;  // an alias for input pixels array
+	console.log(ip);
 	let op = output.pixels; // an alias for output pixels array
 	for(let i=0; i<input.width*input.height; i++)	{
 		let idx=i*4;  // each pixel takes 4 bytes: red, green, blue, alpha(not used in this homework)

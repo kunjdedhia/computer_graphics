@@ -1,0 +1,64 @@
+<head>
+	<title>Ball Glass Scene</title>
+	<meta charset="utf-8"/>
+</head>
+<body>
+<script src="../three.min.js"></script>
+<script src="../raytracer.js"></script>
+<script src="../camera.js"></script>
+<script src="../light.js"></script>
+<script src="../shape.js"></script>
+<script src="../material.js"></script>
+<script src="../hdrpng.min.js"></script>
+
+<script>
+	let imageWidth = 640;
+	let imageHeight = 480;
+	let exposure = 1;
+	let backgroundColor = new THREE.Color(0, 0, 0);
+	let ambientLight = new THREE.Color(0.01, 0.01, 0.01);
+	let maxDepth = 5;
+	let camera;
+	let shapes = [];
+	let lights = [];
+	let probeDir = 'all_probes/grace_probe.hdr';
+	let probePix = null;
+	let probe = null;
+	let probeWidth = 1000;
+	let probeHeight = 1000;
+
+	function init() {		
+		// create camera
+		let eye = new THREE.Vector3(8, 5, 9);
+		let target = new THREE.Vector3(0.25, 0, 0.5);
+		let up = new THREE.Vector3(0, 1, 0);
+		let fov = 20;
+		camera = new PinholeCamera(eye, target, up, fov, imageWidth/imageHeight);
+
+		// create glass sphere
+		let radius = 1.25;
+		shapes.push(new Sphere(new THREE.Vector3(-2.5, 0, -2), radius,
+			GlassMaterial(new THREE.Color(0, 0, 0), new THREE.Color(1, 1, 1), 1.8)));
+
+		// create mirror sphere
+		shapes.push(new Sphere(new THREE.Vector3(radius, 0, radius), radius, MirrorMaterial(new THREE.Color(1, 1, 1))));
+
+		// start ray tracing
+		render();	
+	}
+
+	if (typeof probeDir !== 'undefined') {
+		let probe = new HDRImage();
+		probe.src = probeDir;
+		probe.onload = function() {
+			probePix = probe.dataRGBE;
+			console.log(probePix);
+			init();
+		}
+	} else {
+		window.onload = init;
+	}
+	
+</script>
+</body>
+
